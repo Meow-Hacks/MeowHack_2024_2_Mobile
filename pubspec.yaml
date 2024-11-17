@@ -1,0 +1,39 @@
+name: meow_hack_app
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  auto_route: 8.2.0
+  flutter_bloc: 8.1.6
+  flutter_screenutil: 5.9.3
+  flutter_svg: 2.0.10+1
+  provider: ^6.1.2
+  intl: ^0.20.0
+
+  salomon_bottom_bar: ^3.3.2
+  lekas_bottom_bar:
+    git:
+      url: https://github.com/LekasNet/lekas_bottom_bar
+      ref: v0.1.0
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+
+flutter:
+  uses-material-design: true
