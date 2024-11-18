@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Для форматирования даты
+import 'package:intl/intl.dart';
 
 class ActivityCalendar extends StatefulWidget {
-  const ActivityCalendar({Key? key}) : super(key: key);
+  final void Function(DateTime) onDaySelected; // Добавляем callback для передачи выбранного дня
+
+  const ActivityCalendar({Key? key, required this.onDaySelected}) : super(key: key);
 
   @override
   _ActivityCalendarState createState() => _ActivityCalendarState();
@@ -14,12 +16,14 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
   final List<String> daysOfWeek = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   DisplayMode _displayMode = DisplayMode.oneWeek;
   DateTime _currentDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now(); // Добавляем переменную для выбранного дня
 
   @override
   Widget build(BuildContext context) {
     // Общие настройки отступов и количества столбцов
     const double crossAxisSpacing = 2.0;
     const int crossAxisCount = 7;
+    widget.onDaySelected(_selectedDate);
 
     // Вычисление ширины ячейки с учетом отступов
     double gridWidth = (MediaQuery.of(context).size.width - (crossAxisCount - 1) * crossAxisSpacing) / crossAxisCount;
@@ -59,7 +63,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-                // Дни недели через GridView с гибкой высотой элементов
+                // Дни недели через GridView
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -101,17 +105,35 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                   ),
                   itemCount: daysToShow.length,
                   itemBuilder: (context, index) {
-                    return Container(
-                      width: gridWidth,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.2), // Полупрозрачный серый цвет
-                        borderRadius: BorderRadius.circular(10), // Скругление углов
-                      ),
-                      alignment: Alignment.bottomCenter,
-                      padding: EdgeInsets.only(bottom: 4), // Отступ для текста
-                      child: Text(
-                        '${daysToShow[index]}',
-                        style: TextStyle(fontSize: 12, color: Colors.black),
+                    // Вычисляем текущую дату для каждой ячейки
+                    DateTime dateToShow = DateTime(_currentDate.year, _currentDate.month, daysToShow[index].abs());
+                    bool isCurrentDay = dateToShow.day == DateTime.now().day &&
+                        dateToShow.month == DateTime.now().month &&
+                        dateToShow.year == DateTime.now().year;
+                    bool isSelectedDay = dateToShow.day == _selectedDate.day &&
+                        dateToShow.month == _selectedDate.month &&
+                        dateToShow.year == _selectedDate.year;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedDate = dateToShow;
+                        });
+                        widget.onDaySelected(dateToShow); // Вызываем callback при выборе дня
+                      },
+                      child: Container(
+                        width: gridWidth,
+                        decoration: BoxDecoration(
+                          color: isCurrentDay ? Colors.blue.withOpacity(0.3) : Colors.grey.withOpacity(0.2), // Синий фон для текущего дня
+                          borderRadius: BorderRadius.circular(10), // Скругление углов
+                          border: isSelectedDay ? Border.all(color: Colors.blue, width: 2) : null, // Синяя рамка для выбранного дня
+                        ),
+                        alignment: Alignment.bottomCenter,
+                        padding: EdgeInsets.only(bottom: 4), // Отступ для текста
+                        child: Text(
+                          '${daysToShow[index].abs()}', // Используем абсолютное значение дня
+                          style: TextStyle(fontSize: 12, color: Colors.black),
+                        ),
                       ),
                     );
                   },
@@ -234,7 +256,6 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
     }
   }
 
-
   List<int> _getFullMonthWithPadding(DateTime date) {
     int daysInMonth = DateTime(date.year, date.month + 1, 0).day;
     int firstDayOfMonthWeekday = DateTime(date.year, date.month, 1).weekday;
@@ -246,7 +267,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
     if (firstDayOfMonthWeekday != 1) {
       int previousMonthDays = DateTime(date.year, date.month, 0).day; // Количество дней в предыдущем месяце
       List<int> prevMonthDays = List<int>.generate(firstDayOfMonthWeekday - 1,
-              (i) => previousMonthDays - (firstDayOfMonthWeekday - 2 - i)); // Создаем список в правильном порядке
+              (i) => previousMonthDays - (firstDayOfMonthWeekday - 2 - i));
       days = [...prevMonthDays, ...days];
     }
 
@@ -263,7 +284,20 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
   List<int> _getCurrentWeek(DateTime date) {
     int weekday = date.weekday;
     DateTime startOfWeek = date.subtract(Duration(days: weekday - 1));
-    return List<int>.generate(7, (i) => startOfWeek.day + i).map((day) => (day > 31) ? day - 31 : day).toList();
+    List<int> weekDays = [];
+
+    for (int i = 0; i < 7; i++) {
+      DateTime currentDay = startOfWeek.add(Duration(days: i));
+      if (currentDay.month == date.month) {
+        // День в пределах текущего месяца
+        weekDays.add(currentDay.day);
+      } else {
+        // Добавляем день следующего или предыдущего месяца
+        weekDays.add(-currentDay.day); // Используем отрицательные значения для отличия
+      }
+    }
+
+    return weekDays;
   }
 
   List<int> _getNextWeek(DateTime date) {
