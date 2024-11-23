@@ -4,17 +4,21 @@ import 'package:flutter/material.dart';
 
 import 'package:meow_hack_app/di/dependencies_provider.dart';
 import 'package:meow_hack_app/di/dependencies_manager.dart';
+import 'package:meow_hack_app/di/overlay_manager.dart';
 
 import 'package:meow_hack_app/app/routes/navigator.dart';
 import 'package:meow_hack_app/app/routes/routes.dart';
 
 import 'package:meow_hack_app/app/uikit/widgets/nav_bar/custom_nav_bar.dart';
+import 'package:meow_hack_app/app/uikit/theme/app_colors.dart';
+import 'package:meow_hack_app/app/uikit/theme/app_theme.dart';
 
-import '../di/overlay_manager.dart';
+import 'package:meow_hack_app/app/settings/app_settings.dart';
+
+import '../features/login/login_screen.dart';
 import 'app_runner.dart';
 
 import 'package:meow_hack_app/features/test/test.dart';
-
 
 class App extends StatelessWidget {
   final DependenciesManager dependencies;
@@ -23,13 +27,16 @@ class App extends StatelessWidget {
   const App({
     super.key,
     required this.dependencies,
-    required this.env,  // Передаем параметр env в App
+    required this.env,
   });
 
   @override
   Widget build(BuildContext context) {
-    return  ChangeNotifierProvider(
-      create: (_) => OverlayManager(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => OverlayManager()),
+        ChangeNotifierProvider(create: (_) => AppSettings()), // Добавляем провайдер AppSettings
+      ],
       child: DependenciesProvider(
         dependencies: dependencies,
         child: _App(env: env),
@@ -39,36 +46,58 @@ class App extends StatelessWidget {
 }
 
 class _App extends StatelessWidget {
-  final Env env;  // Принимаем параметр env
+  final Env env;
+
   const _App({super.key, required this.env});
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Colors.white,
-          body: _getInitialScreen(),
-        ),
-      ),
+    final LightThemeColors lightColors = LightThemeColors();
+    final DarkThemeColors darkColors = DarkThemeColors();
+
+    return Consumer<AppSettings>(
+      builder: (context, appSettings, child) {
+        return ScreenUtilInit(
+          builder: (context, child) {
+            final bool isTokenValid = appSettings.isAccessTokenValid();
+
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme(lightColors),
+              darkTheme: AppTheme.darkTheme(darkColors),
+              themeMode: appSettings.themeMode,
+              home: isTokenValid
+                  ? _getInitialScreen()
+                  : const LoginPage(), // Если токен невалиден, показываем LoginPage
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _getInitialScreen() {
     switch (env) {
       case Env.dev:
-        return Placeholder();
-      case Env.prod:
         return ChangeNotifierProvider(
           create: (context) => TabManager(),
           child: const Scaffold(
-            resizeToAvoidBottomInset: false,
             body: SafeArea(
               top: true,
               bottom: false,
               child: MainParentBuilder(),
-            )
+            ),
+          ),
+        );
+      case Env.prod:
+        return ChangeNotifierProvider(
+          create: (context) => TabManager(),
+          child: const Scaffold(
+            body: SafeArea(
+              top: true,
+              bottom: false,
+              child: MainParentBuilder(),
+            ),
           ),
         );
       case Env.test:
@@ -79,8 +108,10 @@ class _App extends StatelessWidget {
   }
 }
 
+
 class MainParentBuilder extends StatelessWidget {
   static PageRouter router = PageRouter();
+
   const MainParentBuilder({super.key});
 
   @override
@@ -99,18 +130,19 @@ class MainParentBuilder extends StatelessWidget {
                       children: snapshot.data!,
                     );
                   } else {
-                    // Показываем индикатор загрузки, пока данные загружаются
-                    return Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   }
                 },
               ),
               Positioned(
-                bottom: 0,
-                child: CustomBottomNavigationBar()
+                bottom: 25,
+                child: Container(
+                  height: 50,
+                  child: CustomBottomNavigationBar(),
+                ),
               ),
             ],
           ),
-          // bottomNavigationBar: ,
         );
       },
     );

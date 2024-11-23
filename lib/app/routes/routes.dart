@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meow_hack_app/features/test/test.dart';
 
+import 'package:meow_hack_app/features/schedule/screens/schedule_screen.dart';
+
 
 class PageRouter {
   PageRouter();
@@ -8,7 +10,7 @@ class PageRouter {
   Future<List<Widget>> get pages async {
     return [
       Center(child: Test()),
-      Center(child: Placeholder()),
+      Center(child: LessonSchedulePage()),
       Center(child: Placeholder()),
       Center(child: Placeholder()),
     ];

@@ -19,11 +19,20 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
   DateTime _selectedDate = DateTime.now(); // Добавляем переменную для выбранного дня
 
   @override
+  void initState() {
+    super.initState();
+    // Вызываем onDaySelected при инициализации после первого кадра
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onDaySelected(_selectedDate);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Общие настройки отступов и количества столбцов
     const double crossAxisSpacing = 2.0;
     const int crossAxisCount = 7;
-    widget.onDaySelected(_selectedDate);
+    final theme = Theme.of(context);
 
     // Вычисление ширины ячейки с учетом отступов
     double gridWidth = (MediaQuery.of(context).size.width - (crossAxisCount - 1) * crossAxisSpacing) / crossAxisCount;
@@ -45,15 +54,15 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                ),
-              ],
+              // boxShadow: [
+              //   BoxShadow(
+              //     color: Colors.black.withOpacity(0.1),
+              //     blurRadius: 8,
+              //     spreadRadius: 2,
+              //   ),
+              // ],
             ),
             child: Column(
               children: [
@@ -87,7 +96,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                           ),
                           child: Text(
                             daysOfWeek[index],
-                            style: TextStyle(fontSize: 12, color: Colors.black),
+                            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
                           ),
                         ),
                       ),
@@ -132,7 +141,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                         padding: EdgeInsets.only(bottom: 4), // Отступ для текста
                         child: Text(
                           '${daysToShow[index].abs()}', // Используем абсолютное значение дня
-                          style: TextStyle(fontSize: 12, color: Colors.black),
+                          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
                         ),
                       ),
                     );

@@ -7,11 +7,15 @@ import 'package:meow_hack_app/app/routes/navigator.dart';
 
 
 class CustomBottomNavigationBar extends StatelessWidget {
+  const CustomBottomNavigationBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     final tabManager = Provider.of<TabManager>(context);
+    final theme = Theme.of(context);
 
     return LekasBottomBar(
+      backgroundColor: theme.colorScheme.surface,
       currentIndex: tabManager.currentIndex,
       onTap: (index) => tabManager.setCurrentIndex(index),
       items: [

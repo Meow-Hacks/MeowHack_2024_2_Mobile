@@ -4,12 +4,14 @@ class LekasBottomBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
   final List<LekasBottomBarItem> items;
+  final Color backgroundColor; // Новый параметр для цвета фона
 
   const LekasBottomBar({
     Key? key,
     required this.currentIndex,
     required this.onTap,
     required this.items,
+    this.backgroundColor = Colors.white, // Значение по умолчанию
   }) : super(key: key);
 
   @override
@@ -19,18 +21,17 @@ class LekasBottomBar extends StatelessWidget {
     final barWidth = (items.length * 80.0).clamp(0.0, maxBarWidth);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 0),
       child: Container(
         width: screenWidth,
-        height: 100,
+        height: 50,
         child: Center(
           child: Container(
             width: barWidth,
             padding: EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              // border: Border.all(color: Colors.grey.withOpacity(0.5)),
+              color: backgroundColor, // Используем переданный цвет фона
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -106,21 +107,13 @@ class AnimatedIconWithShadow extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: isSelected ? selectedColor : Colors.grey,
-                    size: 30, // Ensure consistent icon size
+                    size: 30,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        // SizedBox(height: 4), // Space between icon and text
-        // Text(
-        //   label,
-        //   style: TextStyle(
-        //     color: isSelected ? selectedColor : Colors.grey,
-        //     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        //   ),
-        // ),
       ],
     );
   }
