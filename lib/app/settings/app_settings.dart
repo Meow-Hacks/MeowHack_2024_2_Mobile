@@ -8,17 +8,20 @@ class AppSettings extends ChangeNotifier {
   static const String _keyAccessToken = 'accessToken';
   static const String _keyRefreshToken = 'refreshToken';
   static const String _keyTokenExpiry = 'tokenExpiry';
+  static const String _keyGradeVisualization = 'gradeVisualization';
 
   String _role = 'user';
   ThemeMode _themeMode = ThemeMode.system;
   String? _accessToken;
   String? _refreshToken;
   DateTime? _tokenExpiry;
+  bool _gradeVisualization = true; // Default value for grade visualization
 
   String get role => _role;
   ThemeMode get themeMode => _themeMode;
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
+  bool get gradeVisualization => _gradeVisualization;
 
   AppSettings() {
     _loadSettings();
@@ -30,6 +33,7 @@ class AppSettings extends ChangeNotifier {
     _themeMode = _getThemeModeFromString(prefs.getString(_keyThemeMode) ?? 'system');
     _accessToken = prefs.getString(_keyAccessToken);
     _refreshToken = prefs.getString(_keyRefreshToken);
+    _gradeVisualization = prefs.getBool(_keyGradeVisualization) ?? true;
     final expiry = prefs.getString(_keyTokenExpiry);
     _tokenExpiry = expiry != null ? DateTime.parse(expiry) : null;
     notifyListeners();
@@ -114,6 +118,14 @@ class AppSettings extends ChangeNotifier {
     _themeMode = newThemeMode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyThemeMode, _themeModeToString(newThemeMode));
+    notifyListeners();
+  }
+
+  /// Sets the grade visualization preference and saves it to shared preferences
+  Future<void> setGradeVisualization(bool value) async {
+    _gradeVisualization = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyGradeVisualization, value);
     notifyListeners();
   }
 

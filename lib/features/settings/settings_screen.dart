@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../app/settings/app_settings.dart';
 import '../../app/uikit/widgets/active_overlay/active_overlay_widget.dart';
 import '../account/account_screen.dart';
-import '../login/login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -14,13 +13,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool showPerformanceInCalendar = false;
-  bool showTaskCount = false;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appSettings = Provider.of<AppSettings>(context, listen: false);
+    bool showTaskCount = false;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,11 +57,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.calendar_today,
             title: 'Отображать успеваемость в календаре',
             trailing: CupertinoSwitch(
-              value: showPerformanceInCalendar,
+              value: appSettings.gradeVisualization,
               onChanged: (value) {
-                setState(() {
-                  showPerformanceInCalendar = value;
-                });
+                appSettings.setGradeVisualization(value);
               },
             ),
           ),
@@ -75,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: showTaskCount,
               onChanged: (value) {
                 setState(() {
-                  showTaskCount = value;
+                  showTaskCount = !showTaskCount;
                 });
               },
             ),
@@ -131,11 +126,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final appSettings = Provider.of<AppSettings>(context, listen: false);
                 await appSettings.clearTokens(); // Очистка токенов
                 Navigator.of(context).pop(); // Закрыть оверлей
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
-                  ),
-                );
               },
               isCloseButton: true,
             ),
@@ -144,7 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
 }
 
 class _SettingItem extends StatelessWidget {
@@ -184,12 +173,12 @@ class _SettingItem extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Flexible( // Используем Flexible вместо Expanded
+            Flexible(
               child: Row(
                 children: [
                   Icon(icon, size: 24, color: theme.colorScheme.primary),
                   const SizedBox(width: 12),
-                  Flexible( // Добавляем Flexible для текста
+                  Flexible(
                     child: Text(
                       title,
                       style: theme.textTheme.bodyLarge,
@@ -207,4 +196,3 @@ class _SettingItem extends StatelessWidget {
     );
   }
 }
-

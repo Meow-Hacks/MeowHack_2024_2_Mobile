@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meow_hack_app/models/lesson_model.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../di/global_data_provider.dart';
+import '../../../settings/app_settings.dart';
 
 class LessonWidget extends StatefulWidget {
   final LessonModel lesson;
@@ -17,6 +21,21 @@ class _LessonWidgetState extends State<LessonWidget>
   late Animation<Offset> _slideAnimation;
   late Animation<Offset> _reverseSlideAnimation;
   bool _isExpanded = false;
+
+  Color _getColorForGrade(int grade) {
+    switch (grade) {
+      case 5:
+        return Colors.green;
+      case 4:
+        return Colors.yellow;
+      case 3:
+        return Colors.orange;
+      case 2:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   void initState() {
@@ -52,8 +71,14 @@ class _LessonWidgetState extends State<LessonWidget>
 
   @override
   Widget build(BuildContext context) {
+    final globalData = Provider.of<GlobalDataProvider>(context);
+    final settings = Provider.of<AppSettings>(context, listen: false);
     final lesson = widget.lesson;
     final theme = Theme.of(context);
+    var gradeColor = Colors.transparent;
+    if (globalData.grades[widget.lesson.subject] != null && settings.gradeVisualization == true) {
+      gradeColor = _getColorForGrade((globalData.grades[widget.lesson.subject]!.reduce((a, b) => a + b) / globalData.grades[widget.lesson.subject]!.length).toDouble().round());
+    }
 
     return GestureDetector(
       onTap: () {
@@ -74,6 +99,7 @@ class _LessonWidgetState extends State<LessonWidget>
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: gradeColor, width: 2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),

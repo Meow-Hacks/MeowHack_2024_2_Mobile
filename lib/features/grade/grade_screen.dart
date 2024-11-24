@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'grade_api.dart';
+import 'package:provider/provider.dart';
+import '../../di/global_data_provider.dart';
 
 class GradeScreen extends StatefulWidget {
   const GradeScreen({Key? key}) : super(key: key);
@@ -9,22 +10,15 @@ class GradeScreen extends StatefulWidget {
 }
 
 class _GradeScreenState extends State<GradeScreen> {
-  late Future<Map<String, List<int>>> _gradesFuture;
-  late Future<double> _gpaFuture;
-  late Future<double> _percentileFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    final api = GradeApi(context);
-    _gradesFuture = api.fetchGrades();
-    _gpaFuture = api.fetchGPA();
-    _percentileFuture = api.fetchPercentile();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final globalData = Provider.of<GlobalDataProvider>(context);
+
+    // Получение данных из провайдера
+    final grades = globalData.grades;
+    final gpa = globalData.gpa;
+    final percentile = globalData.percentile;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,76 +28,53 @@ class _GradeScreenState extends State<GradeScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: FutureBuilder<Map<String, List<int>>>(
-          future: _gradesFuture,
-          builder: (context, gradesSnapshot) {
-            if (gradesSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (gradesSnapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Error loading grades. ${gradesSnapshot.error}',
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-              );
-            }
-
-            final grades = gradesSnapshot.data ?? {};
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: globalData.isLoading
+            ? const Center(child: CircularProgressIndicator()) // Показ загрузки
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Display GPA and Percentile
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Display GPA and Percentile
-                FutureBuilder<double>(
-                  future: _gpaFuture,
-                  builder: (context, gpaSnapshot) {
-                    final gpa = gpaSnapshot.data ?? 0.0;
-
-                    return FutureBuilder<double>(
-                      future: _percentileFuture,
-                      builder: (context, percentileSnapshot) {
-                        final percentile = percentileSnapshot.data ?? 0.0;
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _InfoBox(
-                              label: 'GPA',
-                              value: gpa.toStringAsFixed(2),
-                              theme: theme,
-                            ),
-                            _InfoBox(
-                              label: 'Percentile',
-                              value: '${percentile.toStringAsFixed(2)}%',
-                              theme: theme,
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                _InfoBox(
+                  label: 'GPA',
+                  value: gpa.toStringAsFixed(2),
+                  theme: theme,
                 ),
-                const SizedBox(height: 16),
-
-                // Display Grades
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: grades.keys.length,
-                    itemBuilder: (context, index) {
-                      final subject = grades.keys.elementAt(index);
-                      final subjectGrades = grades[subject]!;
-
-                      return _GradeItem(
-                        subject: subject,
-                        grades: subjectGrades,
-                        theme: theme,
-                      );
-                    },
-                  ),
+                _InfoBox(
+                  label: 'Percentile',
+                  value: '${percentile.toStringAsFixed(2)}%',
+                  theme: theme,
                 ),
               ],
-            );
-          },
+            ),
+            const SizedBox(height: 16),
+
+            // Display Grades
+            grades.isEmpty
+                ? const Center(
+              child: Text(
+                'No grades available.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            )
+                : Expanded(
+              child: ListView.builder(
+                itemCount: grades.keys.length,
+                itemBuilder: (context, index) {
+                  final subject = grades.keys.elementAt(index);
+                  final subjectGrades = grades[subject]!;
+
+                  return _GradeItem(
+                    subject: subject,
+                    grades: subjectGrades,
+                    theme: theme,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

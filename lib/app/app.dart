@@ -18,6 +18,7 @@ import 'package:meow_hack_app/app/uikit/theme/app_theme.dart';
 
 import 'package:meow_hack_app/app/settings/app_settings.dart';
 
+import '../di/global_data_provider.dart';
 import '../features/login/login_screen.dart';
 import '../features/login/login_api.dart'; // Import the login API
 import 'app_runner.dart';
@@ -40,6 +41,7 @@ class App extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => OverlayManager()),
         ChangeNotifierProvider(create: (_) => AppSettings()), // Добавляем провайдер AppSettings
+        ChangeNotifierProvider(create: (_) => GlobalDataProvider()),
       ],
       child: DependenciesProvider(
         dependencies: dependencies,
@@ -102,6 +104,12 @@ class _AppState extends State<_App> {
   Widget build(BuildContext context) {
     final LightThemeColors lightColors = LightThemeColors();
     final DarkThemeColors darkColors = DarkThemeColors();
+    final globalData = Provider.of<GlobalDataProvider>(context, listen: false);
+
+    // Загружаем данные при запуске приложения
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      globalData.fetchInitialData(context);
+    });
 
     return Consumer<AppSettings>(
       builder: (context, appSettings, child) {

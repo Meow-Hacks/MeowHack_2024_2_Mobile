@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meow_hack_app/features/schedule/shedule_api.dart';
 import 'package:meow_hack_app/features/test/globals.dart';
+import 'package:provider/provider.dart';
 import '../../../app/uikit/widgets/activity_calendar/activity_calendar_widget.dart';
 import '../../../app/uikit/widgets/lesson_padding/lesson_widget.dart';
 import '../../../models/lesson_model.dart';
+import '../../di/global_data_provider.dart';
 
 class LessonSchedulePage extends StatefulWidget {
   const LessonSchedulePage({Key? key}) : super(key: key);
@@ -22,43 +24,13 @@ class _LessonSchedulePageState extends State<LessonSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _fetchLessons();
-  }
-
-  Future<void> _fetchLessons() async {
-    final api = ScheduleApi(context);
-
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-    }
-
-    try {
-      final lessons = await api.fetchSchedule();
-      if (mounted) {
-        setState(() {
-          allLessons = lessons.map((lesson) => LessonModel.fromJson(lesson)).toList();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          errorMessage = 'Error loading schedule. Please try again later.';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final globalData = Provider.of<GlobalDataProvider>(context);
+    isLoading = globalData.isLoading;
+    allLessons = globalData.lessons;
     final filteredLessons = allLessons.where((lesson) {
       if (selectedDate == null) return true; // Если дата не выбрана, отображаем все
       return isSameDate(lesson.startTime, selectedDate!);
@@ -99,7 +71,7 @@ class _LessonSchedulePageState extends State<LessonSchedulePage> {
                 : filteredLessons.isEmpty
                 ? const Center(
                   child: Text(
-                    'No lessons for the selected date.',
+                    'На сегодня расписание отсутствует',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 )

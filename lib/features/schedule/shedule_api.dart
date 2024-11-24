@@ -31,7 +31,6 @@ class ScheduleApi {
       // Если запрос успешен, обновляем кэш и возвращаем данные
       if (response.statusCode == 200) {
         final lessons = List<Map<String, dynamic>>.from(response.data['lessons']);
-        // print(lessons);
         await _saveScheduleToCache(lessons);
         return lessons;
       } else {
