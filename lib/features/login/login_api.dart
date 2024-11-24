@@ -27,7 +27,26 @@ class LoginApi {
       throw Exception('Login failed: ${response.statusMessage}');
     }
   }
+
+  Future<Map<String, dynamic>> teacherLogin({
+    required String email,
+    required String password,
+  }) async {
+    const url = 'https://meowhacks.efbo.ru/api/auth/teacher/login';
+
+    final response = await _dio.post(url, data: {
+      "mail": email,
+      "password": password,
+    });
+
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('Login failed: ${response.statusMessage}');
+    }
+  }
 }
+
 
 class TokenInterceptor extends Interceptor {
   final BuildContext context;
@@ -45,7 +64,7 @@ class TokenInterceptor extends Interceptor {
 
     // Добавляем токен в заголовки запроса
     if (appSettings.accessToken != null) {
-      options.headers['Authorization'] = 'Bearer ${appSettings.accessToken}';
+      options.headers['authorization'] = '${appSettings.accessToken}';
     }
 
     super.onRequest(options, handler);
@@ -56,7 +75,7 @@ class TokenInterceptor extends Interceptor {
       final response = await Dio().get(
         'https://meowhacks.efbo.ru/api/auth/student/refresh',
         options: Options(headers: {
-          'Authorization': 'Bearer ${appSettings.refreshToken}',
+          'Authorization': appSettings.refreshToken,
         }),
       );
 

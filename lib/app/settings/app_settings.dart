@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,14 +9,12 @@ class AppSettings extends ChangeNotifier {
   static const String _keyRefreshToken = 'refreshToken';
   static const String _keyTokenExpiry = 'tokenExpiry';
 
-  // Default values
   String _role = 'user';
   ThemeMode _themeMode = ThemeMode.system;
   String? _accessToken;
   String? _refreshToken;
   DateTime? _tokenExpiry;
 
-  // Getters
   String get role => _role;
   ThemeMode get themeMode => _themeMode;
   String? get accessToken => _accessToken;
@@ -25,9 +24,8 @@ class AppSettings extends ChangeNotifier {
     _loadSettings();
   }
 
-  /// Загружаем настройки из SharedPreferences при запуске
   Future<void> _loadSettings() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     _role = prefs.getString(_keyRole) ?? 'user';
     _themeMode = _getThemeModeFromString(prefs.getString(_keyThemeMode) ?? 'system');
     _accessToken = prefs.getString(_keyAccessToken);
@@ -37,31 +35,28 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Устанавливаем access и refresh токены
   Future<void> setTokens(String accessToken, String refreshToken, DateTime expiry) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     _tokenExpiry = expiry;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyAccessToken, accessToken);
     await prefs.setString(_keyRefreshToken, refreshToken);
     await prefs.setString(_keyTokenExpiry, expiry.toIso8601String());
     notifyListeners();
   }
 
-  /// Очищаем токены при необходимости (например, при логауте)
   Future<void> clearTokens() async {
     _accessToken = null;
     _refreshToken = null;
     _tokenExpiry = null;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccessToken);
     await prefs.remove(_keyRefreshToken);
     await prefs.remove(_keyTokenExpiry);
     notifyListeners();
   }
 
-  /// Проверяем, валиден ли токен
   bool isAccessTokenValid() {
     if (_accessToken == null || _tokenExpiry == null) {
       return false;
@@ -69,23 +64,59 @@ class AppSettings extends ChangeNotifier {
     return DateTime.now().isBefore(_tokenExpiry!);
   }
 
-  /// Устанавливаем роль пользователя
+  Future<bool> refreshAccessToken() async {
+    if (_refreshToken == null) {
+      return false;
+    }
+
+    try {
+      final response = await Dio().get(
+        'https://meowhacks.efbo.ru/api/auth/student/refresh',
+        options: Options(
+          headers: {'Authorization': _refreshToken},
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        await setTokens(
+          data['access_token'],
+          data['refresh_token'],
+          DateTime.now().add(Duration(hours: 1)),
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error refreshing token: $e');
+      return false;
+    }
+  }
+
+  Future<void> ensureValidAccessToken() async {
+    if (!isAccessTokenValid()) {
+      final success = await refreshAccessToken();
+      if (!success) {
+        await clearTokens();
+        throw Exception('Unable to refresh access token');
+      }
+    }
+  }
+
   Future<void> setRole(String newRole) async {
     _role = newRole;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyRole, newRole);
     notifyListeners();
   }
 
-  /// Устанавливаем тему приложения
   Future<void> setThemeMode(ThemeMode newThemeMode) async {
     _themeMode = newThemeMode;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyThemeMode, _themeModeToString(newThemeMode));
     notifyListeners();
   }
 
-  /// Преобразуем тему в строку для сохранения
   String _themeModeToString(ThemeMode themeMode) {
     switch (themeMode) {
       case ThemeMode.light:
@@ -98,7 +129,6 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
-  /// Преобразуем строку обратно в тему
   ThemeMode _getThemeModeFromString(String themeModeString) {
     switch (themeModeString) {
       case 'light':

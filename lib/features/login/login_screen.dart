@@ -37,28 +37,50 @@ class _LoginPageState extends State<LoginPage> {
   void _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-
     final loginApi = LoginApi(context); // Передаем контекст
 
     try {
-      final result = await loginApi.studentLogin(
-        email: email,
-        password: password,
-      );
+      Map<String, dynamic> result;
 
-      // Обновляем токены и роль
-      final appSettings = Provider.of<AppSettings>(context, listen: false);
-      await appSettings.setTokens(
+      // Вызываем нужный метод в зависимости от роли
+      if (isStudent) {
+        result = await loginApi.studentLogin(email: email, password: password);
+        await Provider.of<AppSettings>(context, listen: false).setRole('student');
+      } else {
+        result = await loginApi.teacherLogin(email: email, password: password);
+        await Provider.of<AppSettings>(context, listen: false).setRole('teacher');
+      }
+
+      // Сохраняем токены
+      await Provider.of<AppSettings>(context, listen: false).setTokens(
         result['access_token'],
         result['refresh_token'],
         DateTime.now().add(const Duration(hours: 1)),
       );
-      await appSettings.setRole('student');
-      print('Login successful');
+
+      print('Login successful: ${result['access_token']}');
     } catch (e) {
       print('Error during login: $e');
+      _showError(context, 'Ошибка авторизации: $e');
     }
   }
+
+  void _showError(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ошибка'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {

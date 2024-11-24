@@ -11,9 +11,9 @@ class LessonModel {
   final String teacherName;
   final String teacherSecondName;
   final String teacherLastName;
-  final String task;
-  final DateTime deadline;
-  final String type; // New field for the lesson type
+  final String? task; // Сделано необязательным
+  final DateTime? deadline; // Сделано необязательным
+  final String type;
 
   LessonModel({
     required this.id,
@@ -28,8 +28,8 @@ class LessonModel {
     required this.teacherName,
     required this.teacherSecondName,
     required this.teacherLastName,
-    required this.task,
-    required this.deadline,
+    this.task, // Обновлено
+    this.deadline, // Обновлено
     required this.type,
   });
 
@@ -47,9 +47,9 @@ class LessonModel {
       teacherName: json['teacher_name'],
       teacherSecondName: json['teacher_secondname'],
       teacherLastName: json['teacher_lastname'],
-      task: json['task'],
-      deadline: DateTime.parse(json['deadline']),
-      type: json['type'], // Map the new field
+      task: json['task'], // Будет null, если отсутствует
+      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null, // Обработано
+      type: json['type_of_lesson'],
     );
   }
 
@@ -67,9 +67,9 @@ class LessonModel {
       'teacher_name': teacherName,
       'teacher_secondname': teacherSecondName,
       'teacher_lastname': teacherLastName,
-      'task': task,
-      'deadline': deadline.toIso8601String(),
-      'type': type, // Add the new field to JSON
+      'task': task, // Сохраняется null, если отсутствует
+      'deadline': deadline?.toIso8601String(), // Сохраняется null, если отсутствует
+      'type': type,
     };
   }
 }

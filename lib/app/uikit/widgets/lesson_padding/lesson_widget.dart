@@ -180,7 +180,7 @@ class _LessonWidgetState extends State<LessonWidget>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  if (lesson.task.isNotEmpty)
+                  if (lesson.task != null)
                     SlideTransition(
                       position: _slideAnimation,
                       child: Padding(

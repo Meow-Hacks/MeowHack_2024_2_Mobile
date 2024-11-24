@@ -6,6 +6,7 @@ class ActiveOverlayWidget extends StatefulWidget {
   final List<ButtonParams> buttons;
   final bool blackout;
   final bool skippable;
+  final Color backgroundColor;
 
   const ActiveOverlayWidget({
     Key? key,
@@ -14,6 +15,7 @@ class ActiveOverlayWidget extends StatefulWidget {
     this.buttons = const [],
     this.blackout = true,
     this.skippable = true,
+    this.backgroundColor = Colors.white, // Добавлен параметр цвета фона
   }) : super(key: key);
 
   @override
@@ -24,18 +26,18 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
   late AnimationController _controller;
   late Animation<double> _animation;
   final GlobalKey _contentKey = GlobalKey();
-  double _overlayHeight = 300; // Начальная высота (может быть минимальной)
+  double _overlayHeight = 300;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 300),
     );
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOutSine,
+      curve: Curves.easeInOut,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
@@ -47,8 +49,8 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
     if (renderBox != null) {
       setState(() {
         _overlayHeight = renderBox.size.height;
-        _controller.reset(); // Сброс анимации
-        _controller.forward(); // Повторное воспроизведение анимации с учетом новой высоты
+        _controller.reset();
+        _controller.forward();
       });
     }
   }
@@ -77,27 +79,26 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
                 onTap: widget.skippable ? close : null,
                 child: AnimatedOpacity(
                   opacity: _animation.value,
-                  duration: Duration(milliseconds: 70),
+                  duration: const Duration(milliseconds: 50),
                   child: Container(
-                    color: Colors.black.withOpacity(0.2), // Полупрозрачный черный цвет
+                    color: Colors.black.withOpacity(0.2),
                     width: double.infinity,
                     height: double.infinity,
                   ),
                 ),
               ),
-            // Основной контент оверлея
             Positioned(
-              bottom: -_overlayHeight + (_overlayHeight * _animation.value + 5), // Анимация подъема
+              bottom: -_overlayHeight + (_overlayHeight * _animation.value + 5),
               left: 5,
               right: 5,
               child: Material(
                 color: Colors.transparent,
                 child: Container(
                   key: _contentKey,
-                  constraints: BoxConstraints(minHeight: 200), // Минимальная высота
-                  padding: EdgeInsets.all(10),
+                  constraints: const BoxConstraints(minHeight: 200),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: widget.backgroundColor, // Используем цвет фона
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
@@ -113,18 +114,18 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min, // Устанавливаем минимальный размер
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Center(child: widget.content), // Центрируем основной контент
+                          Center(child: widget.content),
                           if (widget.buttons.isNotEmpty)
-                            SizedBox(height: ((widget.buttons.length / 2).ceil() * 50) + ((widget.buttons.length / 2).ceil() - 1) * 10 + 10), // Высота для кнопок
+                            SizedBox(height: ((widget.buttons.length / 2).ceil() * 50) + ((widget.buttons.length / 2).ceil() - 1) * 10 + 10),
                         ],
                       ),
                       if (widget.buttons.isNotEmpty)
                         Positioned(
                           bottom: 0,
                           left: 0,
-                          right: 0, // Занимает всю ширину
+                          right: 0,
                           child: _buildButtonRow(widget.buttons),
                         ),
                       if (widget.skippable)
@@ -134,12 +135,12 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
                           child: GestureDetector(
                             onTap: close,
                             child: Container(
-                              padding: EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
                                 color: Colors.grey[300],
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.close,
                                 size: 16,
                                 color: Colors.black54,
@@ -162,7 +163,6 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
     List<Widget> rows = [];
     for (int i = 0; i < buttons.length; i += 2) {
       if (i + 1 < buttons.length) {
-        // Добавляем строку с двумя кнопками
         rows.add(
           Row(
             children: [
@@ -172,7 +172,6 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
           ),
         );
       } else {
-        // Добавляем строку с одной кнопкой, которая занимает всю ширину
         rows.add(
           Row(
             children: [
@@ -191,28 +190,28 @@ class _ActiveOverlayWidgetState extends State<ActiveOverlayWidget> with SingleTi
   Widget _buildButton(ButtonParams button) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(5), // Расстояние между кнопками
+        padding: const EdgeInsets.all(5),
         child: ElevatedButton(
           onPressed: () {
             if (button.isCloseButton) {
-              button.onPressed?.call(); // Выполняем переданную функцию, если она есть
-              close(); // Закрываем оверлей
+              button.onPressed?.call();
+              close();
             } else {
-              button.onPressed?.call(); // Просто выполняем переданную функцию
+              button.onPressed?.call();
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: button.color ?? Colors.grey[300], // Цвет кнопки
-            padding: EdgeInsets.all(10), // Внутренние отступы кнопки
-            minimumSize: Size(double.infinity, 50), // Минимальная высота
+            backgroundColor: button.color ?? Colors.grey[300],
+            padding: const EdgeInsets.all(10),
+            minimumSize: const Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15), // Скругление кнопки
+              borderRadius: BorderRadius.circular(15),
             ),
             elevation: 0,
           ),
           child: Text(
             button.text,
-            style: TextStyle(color: Colors.black), // Устанавливаем черный цвет текста
+            style: const TextStyle(color: Colors.black),
           ),
         ),
       ),

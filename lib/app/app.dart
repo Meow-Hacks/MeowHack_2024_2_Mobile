@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +19,7 @@ import 'package:meow_hack_app/app/uikit/theme/app_theme.dart';
 import 'package:meow_hack_app/app/settings/app_settings.dart';
 
 import '../features/login/login_screen.dart';
+import '../features/login/login_api.dart'; // Import the login API
 import 'app_runner.dart';
 
 import 'package:meow_hack_app/features/test/test.dart';
@@ -45,10 +49,54 @@ class App extends StatelessWidget {
   }
 }
 
-class _App extends StatelessWidget {
+class _App extends StatefulWidget {
   final Env env;
 
   const _App({super.key, required this.env});
+
+  @override
+  State<_App> createState() => _AppState();
+}
+
+class _AppState extends State<_App> {
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _handleAutomaticLogin(); // Handle automatic login
+  }
+
+  Future<void> _handleAutomaticLogin() async {
+    if (widget.env == Env.dev || widget.env == Env.test) {
+      Map<String, dynamic> response;
+      final loginApi = LoginApi(context);
+      try {
+        response = await loginApi.studentLogin(
+          email: 'ivanov@example.com', // Replace with test credentials
+          password: 'password1', // Replace with test credentials
+        );
+
+        // Сохраняем токены в AppSettings
+        final appSettings = Provider.of<AppSettings>(context, listen: false);
+        final accessToken = response['access_token'] as String;
+        final refreshToken = response['refresh_token'] as String;
+
+        await appSettings.setTokens(
+          accessToken,
+          refreshToken,
+          DateTime.now().add(const Duration(hours: 1)), // Примерное время жизни access_token
+        );
+      } catch (e) {
+        print('Automatic login failed: $e');
+      }
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -57,10 +105,18 @@ class _App extends StatelessWidget {
 
     return Consumer<AppSettings>(
       builder: (context, appSettings, child) {
+        final bool isTokenValid = appSettings.isAccessTokenValid();
+
+        if (isLoading) {
+          return const MaterialApp(
+            home: Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
         return ScreenUtilInit(
           builder: (context, child) {
-            final bool isTokenValid = appSettings.isAccessTokenValid();
-
             return MaterialApp(
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme(lightColors),
@@ -77,45 +133,36 @@ class _App extends StatelessWidget {
   }
 
   Widget _getInitialScreen() {
-    switch (env) {
+    switch (widget.env) {
       case Env.dev:
-        return ChangeNotifierProvider(
-          create: (context) => TabManager(),
-          child: const Scaffold(
-            body: SafeArea(
-              top: true,
-              bottom: false,
-              child: MainParentBuilder(),
-            ),
-          ),
-        );
       case Env.prod:
         return ChangeNotifierProvider(
           create: (context) => TabManager(),
-          child: const Scaffold(
+          child: Scaffold(
             body: SafeArea(
               top: true,
               bottom: false,
-              child: MainParentBuilder(),
+              child: MainParentBuilder(env: widget.env),
             ),
           ),
         );
       case Env.test:
         return Test();
       default:
-        return Placeholder();
+        return const Placeholder();
     }
   }
 }
 
-
 class MainParentBuilder extends StatelessWidget {
-  static PageRouter router = PageRouter();
+  final Env env;
 
-  const MainParentBuilder({super.key});
+  const MainParentBuilder({super.key, required this.env});
 
   @override
   Widget build(BuildContext context) {
+    final PageRouter router = PageRouter(env); // Передаем env
+
     return Consumer<TabManager>(
       builder: (context, tabManager, child) {
         return Scaffold(
@@ -136,7 +183,7 @@ class MainParentBuilder extends StatelessWidget {
               ),
               Positioned(
                 bottom: 25,
-                child: Container(
+                child: SizedBox(
                   height: 50,
                   child: CustomBottomNavigationBar(),
                 ),
