@@ -163,7 +163,7 @@ class _SettingItem extends StatelessWidget {
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(
+            if (theme.brightness == Brightness.dark) BoxShadow(
               color: theme.shadowColor.withOpacity(0.1),
               blurRadius: 8,
               spreadRadius: 2,

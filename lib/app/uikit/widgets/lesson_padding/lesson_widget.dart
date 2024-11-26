@@ -101,7 +101,7 @@ class _LessonWidgetState extends State<LessonWidget>
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: gradeColor, width: 2),
           boxShadow: [
-            BoxShadow(
+            if (theme.brightness == Brightness.dark) BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 4,
               spreadRadius: 2,
@@ -165,7 +165,7 @@ class _LessonWidgetState extends State<LessonWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  SlideTransition(
+                  if (settings.role == 'teacher') SlideTransition(
                     position: _slideAnimation,
                     child: Text(
                       'Group: ${lesson.group}',
@@ -175,7 +175,7 @@ class _LessonWidgetState extends State<LessonWidget>
                       ),
                     ),
                   ),
-                  SlideTransition(
+                  if (settings.role == 'student') SlideTransition(
                     position: _slideAnimation,
                     child: Text(
                       'Teacher: ${lesson.teacherName} ${lesson.teacherSecondName} ${lesson.teacherLastName}',

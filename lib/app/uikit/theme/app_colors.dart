@@ -31,19 +31,19 @@ class LightThemeColors extends ThemeColors {
   LightThemeColors();
 
   @override
-  Color get primary => const Color(0xFF0066CC);
+  Color get primary => const Color(0xFF4171BF);
   @override
-  Color get secondary => const Color(0xFF00CC99);
+  Color get secondary => const Color(0xFF6F94CF);
 
   @override
-  Color get backgroundPrimary => const Color(0xFFFFFFFF);
+  Color get backgroundPrimary => const Color(0xFFF9F9F9);
   @override
-  Color get backgroundSecondary => const Color(0xFFF5F5F5);
+  Color get backgroundSecondary => const Color(0xFFE4E4E4);
   @override
   Color get backgroundTertiary => const Color(0xFFE0E0E0);
 
   @override
-  Color get textPrimary => const Color(0xFF212121);
+  Color get textPrimary => const Color(0xFF2B2B2B);
   @override
   Color get textSecondary => const Color(0xFF757575);
 

@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
   void _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final loginApi = LoginApi(context); // Передаем контекст
+    final loginApi = LoginApi(context);
 
     try {
       Map<String, dynamic> result;

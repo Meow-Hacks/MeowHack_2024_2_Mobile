@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:meow_hack_app/features/schedule/shedule_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/lesson_model.dart';
 import '../features/account/account_api.dart';
+import '../features/entrance/entrance_api.dart';
 import '../features/grade/grade_api.dart';
+import '../features/schedule/shedule_api.dart';
 
 class GlobalDataProvider extends ChangeNotifier {
   List<LessonModel> lessons = [];
@@ -13,7 +14,9 @@ class GlobalDataProvider extends ChangeNotifier {
   double gpa = 0.0;
   double percentile = 0.0;
   Map<String, dynamic> userInfo = {};
+  List<dynamic> entranceHistory = [];
   bool isLoading = true;
+  String? entranceErrorMessage;
 
   Future<void> fetchInitialData(BuildContext context) async {
     try {
@@ -26,6 +29,7 @@ class GlobalDataProvider extends ChangeNotifier {
         fetchGPA(context),
         fetchPercentile(context),
         fetchUserInfo(context),
+        fetchEntranceHistory(context),
       ]);
 
       lessons = fetchedData[0] as List<LessonModel>;
@@ -33,6 +37,7 @@ class GlobalDataProvider extends ChangeNotifier {
       gpa = fetchedData[2] as double;
       percentile = fetchedData[3] as double;
       userInfo = fetchedData[4] as Map<String, dynamic>;
+      entranceHistory = fetchedData[5] as List<dynamic>;
 
       isLoading = false;
       notifyListeners();
@@ -43,7 +48,6 @@ class GlobalDataProvider extends ChangeNotifier {
     }
   }
 
-
   Future<List<LessonModel>> _loadScheduleFromCache() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedData = prefs.getString('schedule_cache');
@@ -53,7 +57,6 @@ class GlobalDataProvider extends ChangeNotifier {
     }
     return [];
   }
-
 
   Future<List<LessonModel>> fetchLessons(BuildContext context) async {
     final api = ScheduleApi(context);
@@ -79,7 +82,7 @@ class GlobalDataProvider extends ChangeNotifier {
   Future<double> fetchGPA(BuildContext context) async {
     try {
       final api = GradeApi(context);
-      return api.fetchGPA();; // Замените заглушку реальным запросом
+      return api.fetchGPA();
     } catch (e) {
       print("Error fetching GPA: $e");
       return 0.0;
@@ -89,7 +92,7 @@ class GlobalDataProvider extends ChangeNotifier {
   Future<double> fetchPercentile(BuildContext context) async {
     try {
       final api = GradeApi(context);
-      return api.fetchPercentile(); // Замените заглушку реальным запросом
+      return api.fetchPercentile();
     } catch (e) {
       print("Error fetching percentile: $e");
       return 0.0;
@@ -103,6 +106,18 @@ class GlobalDataProvider extends ChangeNotifier {
     } catch (e) {
       print("Error fetching user info: $e");
       return {};
+    }
+  }
+
+  Future<List<dynamic>> fetchEntranceHistory(BuildContext context) async {
+    final entranceApi = EntranceApi(context);
+
+    try {
+      return await entranceApi.fetchEntranceHistory();
+    } catch (e) {
+      entranceErrorMessage = 'Ошибка загрузки истории входов: $e';
+      print(entranceErrorMessage);
+      return [];
     }
   }
 }

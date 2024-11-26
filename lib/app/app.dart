@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:meow_hack_app/app/uikit/widgets/new_nav_bar/new_bottom_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
@@ -42,6 +43,7 @@ class App extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OverlayManager()),
         ChangeNotifierProvider(create: (_) => AppSettings()), // Добавляем провайдер AppSettings
         ChangeNotifierProvider(create: (_) => GlobalDataProvider()),
+        ChangeNotifierProvider(create: (_) => PageManager()),
       ],
       child: DependenciesProvider(
         dependencies: dependencies,
@@ -75,9 +77,10 @@ class _AppState extends State<_App> {
       final loginApi = LoginApi(context);
       try {
         response = await loginApi.studentLogin(
-          email: 'ivanov@example.com', // Replace with test credentials
-          password: 'password1', // Replace with test credentials
+          email: 'ivanov@example.com',
+          password: 'password1', 
         );
+
 
         // Сохраняем токены в AppSettings
         final appSettings = Provider.of<AppSettings>(context, listen: false);
@@ -117,6 +120,7 @@ class _AppState extends State<_App> {
 
         if (isLoading) {
           return const MaterialApp(
+            debugShowCheckedModeBanner: false,
             home: Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
@@ -132,7 +136,7 @@ class _AppState extends State<_App> {
               themeMode: appSettings.themeMode,
               home: isTokenValid
                   ? _getInitialScreen()
-                  : const LoginPage(), // Если токен невалиден, показываем LoginPage
+                  : const LoginPage(),
             );
           },
         );
@@ -144,16 +148,7 @@ class _AppState extends State<_App> {
     switch (widget.env) {
       case Env.dev:
       case Env.prod:
-        return ChangeNotifierProvider(
-          create: (context) => TabManager(),
-          child: Scaffold(
-            body: SafeArea(
-              top: true,
-              bottom: false,
-              child: MainParentBuilder(env: widget.env),
-            ),
-          ),
-        );
+        return MainParentBuilder(env: widget.env);
       case Env.test:
         return Test();
       default:
@@ -169,37 +164,36 @@ class MainParentBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PageRouter router = PageRouter(env); // Передаем env
+    final appSettings = Provider.of<AppSettings>(context, listen: false);
+    final String role = appSettings.role; // Получаем роль пользователя
+    final PageRouter router = PageRouter(env, role);
+    final currentPage = Provider.of<PageManager>(context).currentPage;
+    final theme = Theme.of(context);
 
-    return Consumer<TabManager>(
-      builder: (context, tabManager, child) {
-        return Scaffold(
-          body: Stack(
-            children: [
-              FutureBuilder<List<Widget>>(
-                future: router.pages,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                    return IndexedStack(
-                      index: tabManager.currentIndex,
-                      children: snapshot.data!,
-                    );
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                },
-              ),
-              Positioned(
-                bottom: 25,
-                child: SizedBox(
-                  height: 50,
-                  child: CustomBottomNavigationBar(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return Scaffold(
+      body: Stack(
+        children: [
+          router.pages[currentPage],
+          Positioned(
+            bottom: 10,
+            left: 20,
+            right: 20,
+            child: NewBottomBar(
+              backgroundColor: theme.colorScheme.surface,
+              height: 70,
+              icons: const [
+                Icons.home_outlined,
+                Icons.search,
+                Icons.favorite_border,
+                Icons.person_2_outlined,
+              ],
+              onPageSelected: (pageIndex) {
+                print('Switched to page $pageIndex');
+              },
+            ),
+          )
+        ]
+      ),
     );
   }
 }
